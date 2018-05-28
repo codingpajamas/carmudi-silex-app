@@ -6,6 +6,8 @@ use Silex\Provider\TwigServiceProvider;
 use Silex\Provider\ServiceControllerServiceProvider;
 use Silex\Provider\HttpFragmentServiceProvider;
 use Silex\Provider\DoctrineServiceProvider;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 $app = new Application();
 $app->register(new ServiceControllerServiceProvider());
@@ -29,5 +31,9 @@ $app->register(new DoctrineServiceProvider, [
 		'port' => 3306
 	]
 ]);
+
+$app->after(function (Request $request, Response $response) {
+    $response->headers->set('Access-Control-Allow-Origin', '*');
+});
 
 return $app;
