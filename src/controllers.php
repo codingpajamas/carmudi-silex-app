@@ -5,6 +5,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\Validator\Constraints as Assert;
 
 //Request::setTrustedProxies(array('127.0.0.1'));
 
@@ -98,6 +100,12 @@ $app->post('api/vehicles', function(Request $request) use($app) {
         ], 
         Response::HTTP_OK
     ); 
+});
+
+$app->get('api/displacements', function() use($app) {
+    // fetch unique displacement values
+    $displacements = $app['db']->fetchAll('SELECT DISTINCT displacement FROM vehicles WHERE displacement IS NOT NULL');
+    return $app->json($displacements, Response::HTTP_OK); 
 });
 
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
