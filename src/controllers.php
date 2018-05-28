@@ -19,6 +19,87 @@ $app->get('api/vehicles', function() use($app) {
     return $app->json($vehicles, Response::HTTP_OK); 
 });
 
+$app->post('api/vehicles', function(Request $request) use($app) {
+
+    // get the post data
+    $vehicleData = [
+        "name" => $request->get('name'),
+        "price" => (int)$request->get('price'),
+        "location" => $request->get('location'),
+        // "displacement" => $request->get('displacement'),
+        // "power" => $request->get('power'),
+    ];
+
+    // create validation rules
+    $vehicleConstraint = new Assert\Collection([
+        "name" => new Assert\NotBlank(),
+        "location" => new Assert\NotBlank(),
+        "price" => [
+            new Assert\NotBlank(), 
+            new Assert\Type([
+                'type'    => 'integer',
+                'message' => 'The value {{ value }} is not a valid {{ type }}.',
+            ])
+        ],
+        // "power" => new Assert\NotBlank(),
+        // "displacement" => new Assert\NotBlank(),
+    ]);
+
+    // check if post data are valid
+    $validationErrors = $app['validator']->validate($vehicleData, $vehicleConstraint); 
+
+    // if not valid, return the errors
+    if(count($validationErrors) > 0)
+    {
+        $responseError = []; 
+        $propertyAccessor = PropertyAccess::createPropertyAccessor();
+
+        foreach ($validationErrors as $error) { 
+            // need to use this to remove "[]" around "getPropertyPath()"
+            $propertyAccessor->setValue($responseError, $error->getPropertyPath(), $error->getMessage()); 
+        }
+
+        // return failed response
+        return $app->json(
+            [
+                "success"=>false, 
+                "message"=>"All fields are required",
+                "errors"=>$responseError
+            ], 
+            Response::HTTP_UNPROCESSABLE_ENTITY
+        );
+    } 
+
+    // complete the vehicle data for saving to DB - workaround to avoid "unexpected field" issue when validating
+    $vehicleData['displacement'] = $request->get('displacement');
+    $vehicleData['power'] = $request->get('power');
+
+    // if valid, save data to database
+    $addToVehicle = $app['db']->insert('vehicles', $vehicleData);
+    
+    // check if saving is success
+    if(!$addToVehicle)
+    {
+        // if not success, return failed response
+        return $app->json(
+            [
+                "success"=>false, 
+                "message"=>"Unable to add vehicle to list"
+            ], 
+            Response::HTTP_UNPROCESSABLE_ENTITY
+        );
+    }
+
+    // return success result if validated and saved data to DB
+    return $app->json(
+        [
+            "success"=>true, 
+            "message"=>"Vehicle was added"
+        ], 
+        Response::HTTP_OK
+    ); 
+});
+
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
     if ($app['debug']) {
         return;
