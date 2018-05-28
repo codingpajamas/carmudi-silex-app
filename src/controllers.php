@@ -11,8 +11,13 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 $app->get('/', function () use ($app) {
     return $app['twig']->render('index.html.twig', array());
 })
-->bind('homepage')
-;
+->bind('homepage');
+
+$app->get('api/vehicles', function() use($app) {
+    // fetch all record and return - todo:paginate,sort,filter,etc
+    $vehicles = $app['db']->fetchAll('SELECT * FROM vehicles');
+    return $app->json($vehicles, Response::HTTP_OK); 
+});
 
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
     if ($app['debug']) {
